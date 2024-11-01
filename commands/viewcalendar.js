@@ -23,6 +23,9 @@ module.exports = {
       return interaction.editReply("📅 No sessions scheduled.");
     }
 
+    const embeds = [];
+    const componentsArray = [];
+
     for (const session of sessions) {
       const formattedTime = `${formatTime(session.date)} ET`;
       const participantCount = session.participants.length;
@@ -35,7 +38,6 @@ module.exports = {
         participantList = userMentions;
       }
 
-      // Fetch host's avatar
       const hostUser = await interaction.client.users
         .fetch(session.host)
         .catch(() => null);
@@ -56,12 +58,12 @@ module.exports = {
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
 
-      // Set the host's avatar as the thumbnail
       if (hostUser) {
         embed.setThumbnail(hostUser.displayAvatarURL({ dynamic: true }));
       }
 
-      // Add "Let's Go!" and "Can't make it, cause I suck!" buttons
+      embeds.push(embed);
+
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`letsgo_${session._id}`)
@@ -73,12 +75,10 @@ module.exports = {
           .setStyle(ButtonStyle.Danger)
       );
 
-      // Send the embed with buttons
-      await interaction.followUp({ embeds: [embed], components: [row] });
+      componentsArray.push(row);
     }
 
-    // Delete the initial deferred reply to clean up
-    await interaction.deleteReply();
+    await interaction.editReply({ embeds, components: componentsArray });
   },
 };
 
