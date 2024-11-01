@@ -34,6 +34,7 @@ module.exports = {
       } else if (hostUser) {
         query.host = hostUser.id;
       } else {
+        // If no session ID or host is provided, list sessions for the user
         query.host = interaction.user.id;
       }
 
@@ -45,6 +46,7 @@ module.exports = {
         });
       }
 
+      // If multiple sessions are found and no session ID is provided, list them
       if (sessions.length > 1 && !sessionId) {
         let sessionList =
           "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
@@ -55,8 +57,10 @@ module.exports = {
         return interaction.editReply({ content: sessionList });
       }
 
+      // If only one session is found or session ID is provided, proceed to cancel it
       const session = sessions[0];
 
+      // Check if the user is the host or has Admin permissions
       const member = interaction.member;
       const adminRole = interaction.guild.roles.cache.find(
         (role) => role.name === "Admin"
