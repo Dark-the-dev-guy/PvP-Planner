@@ -1,0 +1,32 @@
+{
+  "name": "PvP-Planner",
+  "version": "1.0.0",
+  "description": "Discord-Integrated Gaming Calendar for WoW PvP Sessions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "WoW",
+    "PvP",
+    "calendar"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.6.0",
+    "dotenv": "^16.0.3",
+    "mongoose": "^6.8.0",
+    "node-cron": "^3.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^3.3.3"
+  }
+}
