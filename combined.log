@@ -47,3 +47,18 @@
 {"level":"info","message":"Loaded event: undefined","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:32"}
 {"level":"info","message":"Connected to MongoDB","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:33"}
 {"level":"info","message":"New session scheduled by dorkwidow: rbg on 11-01-24 at 20:00","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:51:06"}
+{"level":"info","message":"Registered command: cancel","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:08"}
+{"level":"info","message":"Registered command: ping","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:08"}
+{"level":"info","message":"Registered command: schedule","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:08"}
+{"level":"info","message":"Registered command: viewcalendar","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:08"}
+{"level":"info","message":"Loaded event: interactionCreate","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:08"}
+{"level":"info","message":"Loaded event: undefined","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:08"}
+{"level":"info","message":"Connected to MongoDB","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:07:09"}
+{"code":10062,"level":"error","message":"Error executing viewcalendar command: Unknown interaction","method":"POST","rawError":{"code":10062,"message":"Unknown interaction"},"requestBody":{"json":{"data":{},"type":5}},"service":"PvP-Planner-Bot","stack":"DiscordAPIError[10062]: Unknown interaction\n    at handleErrors (C:\\Users\\Jacin\\PvP-Planner\\node_modules\\@discordjs\\rest\\dist\\index.js:727:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async BurstHandler.runRequest (C:\\Users\\Jacin\\PvP-Planner\\node_modules\\@discordjs\\rest\\dist\\index.js:831:23)\n    at async _REST.request (C:\\Users\\Jacin\\PvP-Planner\\node_modules\\@discordjs\\rest\\dist\\index.js:1272:22)\n    at async ChatInputCommandInteraction.deferReply (C:\\Users\\Jacin\\PvP-Planner\\node_modules\\discord.js\\src\\structures\\interfaces\\InteractionResponses.js:72:5)\n    at async Object.execute (C:\\Users\\Jacin\\PvP-Planner\\commands\\viewcalendar.js:14:7)\n    at async Object.execute (C:\\Users\\Jacin\\PvP-Planner\\events\\interactionCreate.js:12:9)","status":404,"timestamp":"2024-11-01 16:15:51","url":"https://discord.com/api/v10/interactions/1302003192392843364/aW50ZXJhY3Rpb246MTMwMjAwMzE5MjM5Mjg0MzM2NDp6V3lNNTdhM0lGQ3JiVUUzSnQwcWRqbUVMeHZPU0lTMzdJRFIwcDExOWtqRWlkNWl5Ymc2SDBNRDRPSlNMUXJwakp3TldncHoxZmluaXlVeGs5T3NsT3hNMkVIczFmYmdVQWE1UWRwRDRZNEFOUmRGNHBVWEV6ZEt5UTVpRXFwRg/callback"}
+{"level":"info","message":"Registered command: cancel","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}
+{"level":"info","message":"Registered command: ping","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}
+{"level":"info","message":"Registered command: schedule","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}
+{"level":"info","message":"Registered command: viewcalendar","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}
+{"level":"info","message":"Loaded event: interactionCreate","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}
+{"level":"info","message":"Loaded event: undefined","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}
+{"level":"info","message":"Connected to MongoDB","service":"PvP-Planner-Bot","timestamp":"2024-11-01 16:21:00"}

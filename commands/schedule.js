@@ -94,7 +94,7 @@ module.exports = {
         gameMode,
         date: sessionDateTime,
         host: `${interaction.user.username}#${interaction.user.discriminator}`,
-        participants: [],
+        participants: [], // Initially empty
         notes,
       });
 
@@ -108,11 +108,12 @@ module.exports = {
           { name: "Date", value: dateInput, inline: true },
           {
             name: "Time",
-            value: `${formatTime(sessionDateTime)} ET`,
+            value: `${formatTime(sessionDateTime)}`,
             inline: true,
           },
           { name: "Host", value: newSession.host, inline: false },
-          { name: "Notes", value: notes, inline: false }
+          { name: "Notes", value: notes, inline: false },
+          { name: "Participants", value: "0", inline: false }
         )
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
@@ -151,5 +152,10 @@ function formatTime(date) {
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12; // Convert to 12-hour format
-  return `${hours} ${ampm}`;
+
+  if (minutes === 0) {
+    return `${hours} ${ampm} ET`;
+  } else {
+    return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm} ET`;
+  }
 }

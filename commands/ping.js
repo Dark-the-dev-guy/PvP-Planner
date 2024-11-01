@@ -9,15 +9,22 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      await interaction.deferReply(); // Optional for quick commands
+      await interaction.deferReply(); // Acknowledge the interaction
       await interaction.editReply("Pong!");
       console.log("Responded with Pong!");
     } catch (error) {
       console.error("Error executing ping command:", error);
-      await interaction.editReply({
-        content: "❌ There was an error executing the ping command.",
-        ephemeral: true,
-      });
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
+          content: "❌ There was an error executing the ping command.",
+          ephemeral: true,
+        });
+      } else {
+        await interaction.reply({
+          content: "❌ There was an error executing the ping command.",
+          ephemeral: true,
+        });
+      }
     }
   },
 };
