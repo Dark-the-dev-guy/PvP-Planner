@@ -6,7 +6,6 @@ const {
   PermissionsBitField,
 } = require("discord.js");
 const Session = require("../models/Session");
-const logger = require("../utils/logger");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,115 +25,88 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    try {
-      await interaction.deferReply({ ephemeral: true }); // Acknowledge the command early
+    await interaction.deferReply({ ephemeral: true }); // Acknowledge the command early
 
-      const sessionId = interaction.options.getString("sessionid");
-      const hostUser = interaction.options.getUser("host");
+    const sessionId = interaction.options.getString("sessionid");
+    const hostUser = interaction.options.getUser("host");
 
-      let query = {};
+    let query = {};
 
-      if (sessionId) {
-        query._id = sessionId;
-      } else if (hostUser) {
-        query.host = hostUser.id; // Using user ID for host
-      } else {
-        // If no session ID or host is provided, list sessions for the user
-        query.host = interaction.user.id;
-      }
-
-      const sessions = await Session.find(query);
-
-      if (sessions.length === 0) {
-        return interaction.editReply({
-          content: "No matching sessions found to cancel.",
-        });
-      }
-
-      // If multiple sessions are found, list them and prompt for specific cancellation
-      if (sessions.length > 1) {
-        let sessionList =
-          "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
-        sessions.forEach((session) => {
-          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** <@${session.host}>\n\n`;
-        });
-
-        return interaction.editReply({ content: sessionList });
-      }
-
-      // If only one session is found, proceed to cancel it
-      const session = sessions[0];
-
-      // Check if the user is the host or has Admin permissions
-      const member = interaction.member;
-      const adminRole = interaction.guild.roles.cache.find(
-        (role) => role.name === "Admin"
-      ); // Replace 'Admin' with your admin role name
-
-      if (
-        session.host !== interaction.user.id &&
-        !member.roles.cache.has(adminRole?.id)
-      ) {
-        return interaction.editReply({
-          content: "❌ You do not have permission to cancel this session.",
-          ephemeral: true,
-        });
-      }
-
-      await Session.deleteOne({ _id: session._id });
-
-      const embed = new EmbedBuilder()
-        .setTitle("📅 Session Canceled")
-        .setColor(0xff0000)
-        .addFields(
-          {
-            name: "Game Mode",
-            value: session.gameMode.toUpperCase(),
-            inline: true,
-          },
-          {
-            name: "Date",
-            value: session.date.toLocaleDateString(),
-            inline: true,
-          },
-          {
-            name: "Time",
-            value: `${formatTime(session.date)} ET`,
-            inline: true,
-          },
-          { name: "Host", value: `<@${session.host}>`, inline: false },
-          { name: "Notes", value: session.notes || "No notes", inline: false },
-          { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
-        )
-        .setTimestamp()
-        .setFooter({ text: "PvP Planner" });
-
-      await interaction.editReply({
-        content: "✅ The session has been canceled successfully.",
-        embeds: [embed],
-      });
-      logger.info(
-        `Session canceled by ${interaction.user.tag}: ${session._id}`
-      );
-    } catch (error) {
-      console.error("Error executing cancel command:", error);
-      logger.error("Error executing cancel command:", error);
-
-      // Check if the interaction has already been deferred or replied
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({
-          content:
-            "❌ There was an error canceling the session. Please try again later.",
-          embeds: [],
-        });
-      } else {
-        await interaction.reply({
-          content:
-            "❌ There was an error canceling the session. Please try again later.",
-          ephemeral: true,
-        });
-      }
+    if (sessionId) {
+      query._id = sessionId;
+    } else if (hostUser) {
+      query.host = hostUser.id; // Using user ID for host
+    } else {
+      // If no session ID or host is provided, list sessions for the user
+      query.host = interaction.user.id;
     }
+
+    const sessions = await Session.find(query);
+
+    if (sessions.length === 0) {
+      return interaction.editReply({
+        content: "No matching sessions found to cancel.",
+      });
+    }
+
+    // If multiple sessions are found, list them and prompt for specific cancellation
+    if (sessions.length > 1) {
+      let sessionList =
+        "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
+      sessions.forEach((session) => {
+        sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** <@${session.host}>\n\n`;
+      });
+
+      return interaction.editReply({ content: sessionList });
+    }
+
+    // If only one session is found, proceed to cancel it
+    const session = sessions[0];
+
+    // Check if the user is the host or has Admin permissions
+    const member = interaction.member;
+    const adminRole = interaction.guild.roles.cache.find(
+      (role) => role.name === "Admin"
+    ); // Replace 'Admin' with your admin role name
+
+    if (
+      session.host !== interaction.user.id &&
+      !member.roles.cache.has(adminRole?.id)
+    ) {
+      return interaction.editReply({
+        content: "❌ You do not have permission to cancel this session.",
+        ephemeral: true,
+      });
+    }
+
+    await Session.deleteOne({ _id: session._id });
+
+    const embed = new EmbedBuilder()
+      .setTitle("📅 Session Canceled")
+      .setColor(0xff0000)
+      .addFields(
+        {
+          name: "Game Mode",
+          value: session.gameMode.toUpperCase(),
+          inline: true,
+        },
+        {
+          name: "Date",
+          value: session.date.toLocaleDateString(),
+          inline: true,
+        },
+        { name: "Time", value: `${formatTime(session.date)} ET`, inline: true },
+        { name: "Host", value: `<@${session.host}>`, inline: false },
+        { name: "Notes", value: session.notes || "No notes", inline: false },
+        { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
+      )
+      .setTimestamp()
+      .setFooter({ text: "PvP Planner" });
+
+    await interaction.editReply({
+      content: "✅ The session has been canceled successfully.",
+      embeds: [embed],
+    });
   },
 };
 
