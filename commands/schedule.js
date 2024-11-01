@@ -93,7 +93,7 @@ module.exports = {
       const newSession = new Session({
         gameMode,
         date: sessionDateTime,
-        host: `${interaction.user.username}#${interaction.user.discriminator}`,
+        host: interaction.user.id, // Storing user ID
         participants: [],
         notes,
       });
@@ -112,7 +112,7 @@ module.exports = {
             value: `${formatTime(sessionDateTime)} ET`,
             inline: true,
           },
-          { name: "Host", value: newSession.host, inline: false },
+          { name: "Host", value: `<@${newSession.host}>`, inline: false }, // Mentioning the host
           { name: "Notes", value: notes, inline: false },
           { name: "Participants", value: "0", inline: true }, // Initial participant count
           { name: "Participant List", value: "None", inline: false }

@@ -4,7 +4,7 @@
   "description": "Discord-Integrated Gaming Calendar for WoW PvP Sessions",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node --no-deprecation index.js",
     "deploy": "node deploy-commands.js",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -22,7 +22,7 @@
     "ajv": "^8.17.1",
     "discord.js": "^14.6.0",
     "dotenv": "^16.0.3",
-    "mongoose": "^6.8.0",
+    "mongoose": "^6.13.3",
     "node-cron": "^3.0.2",
     "winston": "^3.15.0"
   },

@@ -51,11 +51,13 @@ module.exports = {
           return;
         }
 
+        const userId = interaction.user.id;
         const userTag = `${interaction.user.username}#${interaction.user.discriminator}`;
+        const user = await interaction.client.users.fetch(userId);
 
         if (action === "letsgo") {
           // "Let's Go!" button
-          if (session.participants.includes(userTag)) {
+          if (session.participants.includes(userId)) {
             await interaction.reply({
               content: "You have already joined this session.",
               ephemeral: true,
@@ -63,7 +65,7 @@ module.exports = {
             return;
           }
 
-          session.participants.push(userTag);
+          session.participants.push(userId);
           await session.save();
 
           await interaction.reply({
@@ -73,7 +75,7 @@ module.exports = {
           logger.info(`${userTag} joined session ${sessionId}`);
         } else if (action === "cantmakeit") {
           // "Can't make it. cause I suck!" button
-          if (!session.participants.includes(userTag)) {
+          if (!session.participants.includes(userId)) {
             await interaction.reply({
               content: "You are not part of this session.",
               ephemeral: true,
@@ -82,7 +84,7 @@ module.exports = {
           }
 
           session.participants = session.participants.filter(
-            (participant) => participant !== userTag
+            (participant) => participant !== userId
           );
           await session.save();
 
@@ -98,9 +100,40 @@ module.exports = {
           });
         }
 
-        // Optionally, update the embed to reflect participant changes
-        // This requires fetching the original message and editing the embed accordingly
-        // Implementation depends on how you want to display updates
+        // Optionally, update the original embed to reflect participant changes
+        // Fetch the original message
+        const message = interaction.message;
+        const embed = EmbedBuilder.from(message.embeds[0]);
+
+        // Update participant count and list
+        embed.fields = embed.fields.map((field) => {
+          if (field.name === "Participants") {
+            return {
+              name: "Participants",
+              value: `${session.participants.length}`,
+              inline: true,
+            };
+          } else if (field.name === "Participant List") {
+            if (session.participants.length === 0) {
+              return { name: "Participant List", value: "None", inline: false };
+            }
+            // Fetch user avatars and create a string of avatars
+            // Note: Discord embeds don't support images inline, but you can list user mentions
+            // Alternatively, use a list of user names with avatars as images if designing a custom solution
+            const participantMentions = session.participants
+              .map((id) => `<@${id}>`)
+              .join(", ");
+            return {
+              name: "Participant List",
+              value: participantMentions,
+              inline: false,
+            };
+          } else {
+            return field;
+          }
+        });
+
+        await message.edit({ embeds: [embed] });
       } catch (error) {
         console.error("Error handling button interaction:", error);
         logger.error("Error handling button interaction:", error);

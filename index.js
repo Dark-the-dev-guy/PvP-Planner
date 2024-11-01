@@ -52,7 +52,7 @@ const eventFiles = fs
 
 for (const file of eventFiles) {
   const event = require(path.join(eventsPath, file));
-  if (event.name && event.execute) {
+  if (event.name && typeof event.execute === "function") {
     // Ensure the event has a name and execute function
     if (event.once) {
       client.once(event.name, (...args) => event.execute(...args, client));

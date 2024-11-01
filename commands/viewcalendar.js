@@ -1,6 +1,12 @@
 // commands/viewcalendar.js
 
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const Session = require("../models/Session");
 const logger = require("../utils/logger");
 
@@ -25,14 +31,26 @@ module.exports = {
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
 
-      sessions.forEach((session) => {
+      for (const session of sessions) {
         const formattedTime = `${formatTime(session.date)} ET`;
         const participantCount = session.participants.length;
-        const participants =
-          participantCount > 0 ? session.participants.join(", ") : "None";
+        let participantList = "None";
+
+        if (participantCount > 0) {
+          const userMentions = session.participants
+            .map((id) => `<@${id}>`)
+            .join(", ");
+          participantList = userMentions;
+        }
+
+        // Fetch host's avatar
+        const hostUser = await interaction.client.users.fetch(session.host);
+        const hostAvatar = hostUser.displayAvatarURL({
+          dynamic: true,
+          size: 64,
+        });
 
         embed.addFields(
-          { name: "Session ID", value: `${session._id}`, inline: true },
           {
             name: "Game Mode",
             value: session.gameMode.toUpperCase(),
@@ -44,14 +62,18 @@ module.exports = {
             inline: true,
           },
           { name: "Time", value: formattedTime, inline: true },
-          { name: "Host", value: session.host, inline: false },
+          { name: "Host", value: `<@${session.host}>`, inline: false },
           { name: "Participants", value: `${participantCount}`, inline: true },
-          { name: "Participant List", value: participants, inline: false },
-          { name: "Notes", value: session.notes || "No notes", inline: false }
+          { name: "Participant List", value: participantList, inline: false },
+          { name: "Notes", value: session.notes || "No notes", inline: false },
+          { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
         );
-      });
+
+        // Optionally, add buttons for editing or cancellation if applicable
+      }
 
       await interaction.editReply({ embeds: [embed] });
+      logger.info(`ViewCalendar command executed by ${interaction.user.tag}`);
     } catch (error) {
       console.error("Error executing viewcalendar command:", error);
       logger.error("Error executing viewcalendar command:", error);

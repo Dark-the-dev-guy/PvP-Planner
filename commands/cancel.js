@@ -1,6 +1,10 @@
 // commands/cancel.js
 
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionsBitField,
+} = require("discord.js");
 const Session = require("../models/Session");
 const logger = require("../utils/logger");
 
@@ -33,10 +37,10 @@ module.exports = {
       if (sessionId) {
         query._id = sessionId;
       } else if (hostUser) {
-        query.host = `${hostUser.username}#${hostUser.discriminator}`;
+        query.host = hostUser.id; // Using user ID for host
       } else {
         // If no session ID or host is provided, list sessions for the user
-        query.host = `${interaction.user.username}#${interaction.user.discriminator}`;
+        query.host = interaction.user.id;
       }
 
       const sessions = await Session.find(query);
@@ -52,7 +56,7 @@ module.exports = {
         let sessionList =
           "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
         sessions.forEach((session) => {
-          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** ${session.host}\n\n`;
+          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** <@${session.host}>\n\n`;
         });
 
         return interaction.editReply({ content: sessionList });
@@ -60,13 +64,29 @@ module.exports = {
 
       // If only one session is found, proceed to cancel it
       const session = sessions[0];
+
+      // Check if the user is the host or has Admin permissions
+      const member = interaction.member;
+      const adminRole = interaction.guild.roles.cache.find(
+        (role) => role.name === "Admin"
+      ); // Replace 'Admin' with your admin role name
+
+      if (
+        session.host !== interaction.user.id &&
+        !member.roles.cache.has(adminRole?.id)
+      ) {
+        return interaction.editReply({
+          content: "❌ You do not have permission to cancel this session.",
+          ephemeral: true,
+        });
+      }
+
       await Session.deleteOne({ _id: session._id });
 
       const embed = new EmbedBuilder()
         .setTitle("📅 Session Canceled")
         .setColor(0xff0000)
         .addFields(
-          { name: "Session ID", value: `${session._id}`, inline: true },
           {
             name: "Game Mode",
             value: session.gameMode.toUpperCase(),
@@ -82,8 +102,9 @@ module.exports = {
             value: `${formatTime(session.date)} ET`,
             inline: true,
           },
-          { name: "Host", value: session.host, inline: false },
-          { name: "Notes", value: session.notes || "No notes", inline: false }
+          { name: "Host", value: `<@${session.host}>`, inline: false },
+          { name: "Notes", value: session.notes || "No notes", inline: false },
+          { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
         )
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
