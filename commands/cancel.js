@@ -119,11 +119,21 @@ module.exports = {
     } catch (error) {
       console.error("Error executing cancel command:", error);
       logger.error("Error executing cancel command:", error);
-      await interaction.editReply({
-        content:
-          "❌ There was an error canceling the session. Please try again later.",
-        ephemeral: true,
-      });
+
+      // Check if the interaction has already been deferred or replied
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
+          content:
+            "❌ There was an error canceling the session. Please try again later.",
+          embeds: [],
+        });
+      } else {
+        await interaction.reply({
+          content:
+            "❌ There was an error canceling the session. Please try again later.",
+          ephemeral: true,
+        });
+      }
     }
   },
 };
