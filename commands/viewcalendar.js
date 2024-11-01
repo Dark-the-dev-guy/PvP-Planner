@@ -1,12 +1,6 @@
 // commands/viewcalendar.js
 
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const Session = require("../models/Session");
 const logger = require("../utils/logger");
 
@@ -44,11 +38,10 @@ module.exports = {
         }
 
         // Fetch host's avatar
-        const hostUser = await interaction.client.users.fetch(session.host);
-        const hostAvatar = hostUser.displayAvatarURL({
-          dynamic: true,
-          size: 64,
-        });
+        const hostUser = await interaction.client.users
+          .fetch(session.host)
+          .catch(() => null);
+        const hostDisplay = hostUser ? `<@${hostUser.id}>` : "Unknown Host";
 
         embed.addFields(
           {
@@ -62,14 +55,12 @@ module.exports = {
             inline: true,
           },
           { name: "Time", value: formattedTime, inline: true },
-          { name: "Host", value: `<@${session.host}>`, inline: false },
+          { name: "Host", value: hostDisplay, inline: false },
           { name: "Participants", value: `${participantCount}`, inline: true },
           { name: "Participant List", value: participantList, inline: false },
           { name: "Notes", value: session.notes || "No notes", inline: false },
           { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
         );
-
-        // Optionally, add buttons for editing or cancellation if applicable
       }
 
       await interaction.editReply({ embeds: [embed] });

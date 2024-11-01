@@ -13,11 +13,11 @@ const sessionSchema = new mongoose.Schema({
     required: true,
   },
   host: {
-    type: String, // Storing user ID
+    type: String, // Storing User ID
     required: true,
   },
   participants: {
-    type: [String], // Storing user IDs
+    type: [String], // Storing User IDs
     default: [],
   },
   notes: {

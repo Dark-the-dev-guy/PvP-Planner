@@ -1,6 +1,7 @@
 // commands/ping.js
 
 const { SlashCommandBuilder } = require("discord.js");
+const logger = require("../utils/logger"); // Import the logger
 
 module.exports = {
   data: new SlashCommandBuilder()
