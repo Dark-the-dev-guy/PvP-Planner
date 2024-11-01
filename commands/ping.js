@@ -8,8 +8,7 @@ module.exports = {
     .setDescription("Replies with Pong!"),
 
   async execute(interaction) {
-    await interaction.deferReply(); // Acknowledge the command early
+    await interaction.deferReply();
     await interaction.editReply("Pong!");
-    // Optionally, log the successful execution
   },
 };

@@ -1,10 +1,6 @@
 // commands/cancel.js
 
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  PermissionsBitField,
-} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const Session = require("../models/Session");
 
 module.exports = {
@@ -25,7 +21,7 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true }); // Acknowledge the command early
+    await interaction.deferReply({ ephemeral: true });
 
     const sessionId = interaction.options.getString("sessionid");
     const hostUser = interaction.options.getUser("host");
@@ -35,7 +31,7 @@ module.exports = {
     if (sessionId) {
       query._id = sessionId;
     } else if (hostUser) {
-      query.host = hostUser.id; // Using user ID for host
+      query.host = hostUser.id;
     } else {
       // If no session ID or host is provided, list sessions for the user
       query.host = interaction.user.id;
@@ -49,18 +45,18 @@ module.exports = {
       });
     }
 
-    // If multiple sessions are found, list them and prompt for specific cancellation
-    if (sessions.length > 1) {
+    // If multiple sessions are found and no session ID is provided, list them
+    if (sessions.length > 1 && !sessionId) {
       let sessionList =
         "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
       sessions.forEach((session) => {
-        sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** <@${session.host}>\n\n`;
+        sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n\n`;
       });
 
       return interaction.editReply({ content: sessionList });
     }
 
-    // If only one session is found, proceed to cancel it
+    // If only one session is found or session ID is provided, proceed to cancel it
     const session = sessions[0];
 
     // Check if the user is the host or has Admin permissions
@@ -82,9 +78,12 @@ module.exports = {
     await Session.deleteOne({ _id: session._id });
 
     const embed = new EmbedBuilder()
-      .setTitle("📅 Session Canceled")
+      .setTitle(
+        `📅 Session Canceled: ${session.gameMode.toUpperCase()} on ${session.date.toLocaleDateString()} @ ${formatTime(session.date)} ET`
+      )
       .setColor(0xff0000)
       .addFields(
+        { name: "Session ID", value: `${session._id}`, inline: true },
         {
           name: "Game Mode",
           value: session.gameMode.toUpperCase(),
@@ -96,9 +95,25 @@ module.exports = {
           inline: true,
         },
         { name: "Time", value: `${formatTime(session.date)} ET`, inline: true },
-        { name: "Host", value: `<@${session.host}>`, inline: false },
+        {
+          name: "Host",
+          value: session.host ? `<@${session.host}>` : "Unknown Host",
+          inline: false,
+        },
         { name: "Notes", value: session.notes || "No notes", inline: false },
-        { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
+        {
+          name: "Participants",
+          value: `${session.participants.length}`,
+          inline: true,
+        },
+        {
+          name: "Participant List",
+          value:
+            session.participants.length > 0
+              ? session.participants.map((id) => `<@${id}>`).join(", ")
+              : "None",
+          inline: false,
+        }
       )
       .setTimestamp()
       .setFooter({ text: "PvP Planner" });
@@ -110,11 +125,10 @@ module.exports = {
   },
 };
 
-// Helper function to format time
 function formatTime(date) {
   let hours = date.getHours();
-  const minutes = date.getMinutes();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
   const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12; // Convert to 12-hour format
-  return `${hours} ${ampm}`;
+  hours = hours % 12 || 12;
+  return `${hours}:${minutes} ${ampm}`;
 }
