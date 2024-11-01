@@ -1,30 +1,29 @@
 // index.js
 
-const { Client, Intents } = require("discord.js");
+const { Client, GatewayIntentBits } = require("discord.js");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const fs = require("fs");
 const path = require("path");
-const { sendReminders } = require("./utils/reminders"); // We'll create this later
+const { sendReminders } = require("./utils/reminders");
+const logger = require("./utils/logger"); // Assuming you have a logger
 
 dotenv.config();
 
 const client = new Client({
-  intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MEMBERS,
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
 // Connect to MongoDB
+mongoose.set("strictQuery", false);
+
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => logger.info("Connected to MongoDB"))
+  .catch((err) => logger.error("MongoDB connection error:", err));
 
 // Load Commands
 client.commands = new Map();
@@ -54,8 +53,10 @@ for (const file of eventFiles) {
 }
 
 client.once("ready", () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+  logger.info(`Logged in as ${client.user.tag}!`);
   sendReminders(client); // Initialize reminders
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+logger.info("Logger is working!");
