@@ -23,7 +23,7 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      await interaction.deferReply({ ephemeral: true }); // Acknowledge the command
+      await interaction.deferReply({ ephemeral: true }); // Acknowledge the command early
 
       const sessionId = interaction.options.getString("sessionid");
       const hostUser = interaction.options.getUser("host");
@@ -35,7 +35,7 @@ module.exports = {
       } else if (hostUser) {
         query.host = `${hostUser.username}#${hostUser.discriminator}`;
       } else {
-        // Default: Cancel sessions hosted by the command user
+        // If no session ID or host is provided, list sessions for the user
         query.host = `${interaction.user.username}#${interaction.user.discriminator}`;
       }
 
@@ -47,23 +47,25 @@ module.exports = {
         });
       }
 
-      // If multiple sessions are found when canceling by host
-      if (sessions.length > 1 && sessionId === null && hostUser) {
-        // Optional: Implement permission checks here if necessary
+      // If multiple sessions are found, list them and prompt for specific cancellation
+      if (sessions.length > 1) {
+        let sessionList =
+          "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
+        sessions.forEach((session) => {
+          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** ${session.host}\n\n`;
+        });
+
+        return interaction.editReply({ content: sessionList });
       }
 
-      // Cancel all found sessions
-      const cancelledSessions = await Session.deleteMany(query);
+      // If only one session is found, proceed to cancel it
+      const session = sessions[0];
+      await Session.deleteOne({ _id: session._id });
 
-      // Prepare confirmation embed
       const embed = new EmbedBuilder()
-        .setTitle("📅 Session(s) Canceled")
+        .setTitle("📅 Session Canceled")
         .setColor(0xff0000)
-        .setTimestamp()
-        .setFooter({ text: "PvP Planner" });
-
-      sessions.forEach((session) => {
-        embed.addFields(
+        .addFields(
           { name: "Session ID", value: `${session._id}`, inline: true },
           {
             name: "Game Mode",
@@ -82,32 +84,25 @@ module.exports = {
           },
           { name: "Host", value: session.host, inline: false },
           { name: "Notes", value: session.notes || "No notes", inline: false }
-        );
-      });
+        )
+        .setTimestamp()
+        .setFooter({ text: "PvP Planner" });
 
       await interaction.editReply({
-        content: "✅ The session(s) have been canceled successfully.",
+        content: "✅ The session has been canceled successfully.",
         embeds: [embed],
       });
       logger.info(
-        `Session(s) canceled by ${interaction.user.tag}: ${sessions.map((s) => s._id).join(", ")}`
+        `Session canceled by ${interaction.user.tag}: ${session._id}`
       );
     } catch (error) {
       console.error("Error executing cancel command:", error);
       logger.error("Error executing cancel command:", error);
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({
-          content:
-            "❌ There was an error canceling the session(s). Please try again later.",
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content:
-            "❌ There was an error canceling the session(s). Please try again later.",
-          ephemeral: true,
-        });
-      }
+      await interaction.editReply({
+        content:
+          "❌ There was an error canceling the session. Please try again later.",
+        ephemeral: true,
+      });
     }
   },
 };

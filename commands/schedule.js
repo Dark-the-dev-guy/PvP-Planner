@@ -94,7 +94,7 @@ module.exports = {
         gameMode,
         date: sessionDateTime,
         host: `${interaction.user.username}#${interaction.user.discriminator}`,
-        participants: [], // Initially empty
+        participants: [],
         notes,
       });
 
@@ -104,29 +104,31 @@ module.exports = {
         .setTitle("📅 Session Scheduled")
         .setColor(0x1e90ff)
         .addFields(
+          { name: "Session ID", value: `${newSession._id}`, inline: true },
           { name: "Game Mode", value: gameMode.toUpperCase(), inline: true },
           { name: "Date", value: dateInput, inline: true },
           {
             name: "Time",
-            value: `${formatTime(sessionDateTime)}`,
+            value: `${formatTime(sessionDateTime)} ET`,
             inline: true,
           },
           { name: "Host", value: newSession.host, inline: false },
           { name: "Notes", value: notes, inline: false },
-          { name: "Participants", value: "0", inline: false }
+          { name: "Participants", value: "0", inline: true }, // Initial participant count
+          { name: "Participant List", value: "None", inline: false }
         )
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
 
-      // Adding Join and Leave buttons
+      // Adding "Let's Go!" and "Can't make it. cause I suck!" buttons
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setCustomId(`join_${newSession._id}`)
-          .setLabel("Join")
+          .setCustomId(`letsgo_${newSession._id}`)
+          .setLabel("Let's Go!")
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
-          .setCustomId(`leave_${newSession._id}`)
-          .setLabel("Leave")
+          .setCustomId(`cantmakeit_${newSession._id}`)
+          .setLabel("Can't make it. cause I suck!")
           .setStyle(ButtonStyle.Danger)
       );
 
@@ -152,10 +154,5 @@ function formatTime(date) {
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12; // Convert to 12-hour format
-
-  if (minutes === 0) {
-    return `${hours} ${ampm} ET`;
-  } else {
-    return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm} ET`;
-  }
+  return `${hours} ${ampm}`;
 }

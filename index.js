@@ -17,7 +17,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    // Add other intents if needed
+    GatewayIntentBits.MessageContent, // If you plan to handle message content
   ],
   partials: [Partials.Channel], // If you need partials
 });
@@ -52,12 +52,19 @@ const eventFiles = fs
 
 for (const file of eventFiles) {
   const event = require(path.join(eventsPath, file));
-  if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args, client));
+  if (event.name && event.execute) {
+    // Ensure the event has a name and execute function
+    if (event.once) {
+      client.once(event.name, (...args) => event.execute(...args, client));
+    } else {
+      client.on(event.name, (...args) => event.execute(...args, client));
+    }
+    logger.info(`Loaded event: ${event.name}`);
   } else {
-    client.on(event.name, (...args) => event.execute(...args, client));
+    logger.warn(
+      `Failed to load an event from file: ${file} (Missing 'name' or 'execute' property)`
+    );
   }
-  logger.info(`Loaded event: ${event.name}`);
 }
 
 client.login(process.env.DISCORD_TOKEN);

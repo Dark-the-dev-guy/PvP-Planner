@@ -27,10 +27,9 @@ module.exports = {
 
       sessions.forEach((session) => {
         const formattedTime = `${formatTime(session.date)} ET`;
+        const participantCount = session.participants.length;
         const participants =
-          session.participants.length > 0
-            ? session.participants.join(", ")
-            : "None";
+          participantCount > 0 ? session.participants.join(", ") : "None";
 
         embed.addFields(
           { name: "Session ID", value: `${session._id}`, inline: true },
@@ -46,7 +45,8 @@ module.exports = {
           },
           { name: "Time", value: formattedTime, inline: true },
           { name: "Host", value: session.host, inline: false },
-          { name: "Participants", value: participants, inline: false },
+          { name: "Participants", value: `${participantCount}`, inline: true },
+          { name: "Participant List", value: participants, inline: false },
           { name: "Notes", value: session.notes || "No notes", inline: false }
         );
       });
