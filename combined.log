@@ -40,3 +40,10 @@
 {"level":"info","message":"Logger is working!","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:36:30"}
 {"level":"info","message":"Connected to MongoDB","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:36:30"}
 {"level":"info","message":"Logged in as PvP-Planner Bot#2720!","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:36:30"}
+{"level":"info","message":"Registered command: ping","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:32"}
+{"level":"info","message":"Registered command: schedule","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:32"}
+{"level":"info","message":"Registered command: viewcalendar","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:32"}
+{"level":"info","message":"Loaded event: interactionCreate","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:32"}
+{"level":"info","message":"Loaded event: undefined","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:32"}
+{"level":"info","message":"Connected to MongoDB","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:46:33"}
+{"level":"info","message":"New session scheduled by dorkwidow: rbg on 11-01-24 at 20:00","service":"PvP-Planner-Bot","timestamp":"2024-11-01 14:51:06"}

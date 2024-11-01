@@ -3,36 +3,99 @@
 module.exports = {
   name: "interactionCreate",
   async execute(interaction) {
-    console.log(`Received interaction: ${interaction.type}`);
+    if (interaction.isCommand()) {
+      // Handle Slash Commands
+      const command = interaction.client.commands.get(interaction.commandName);
+      if (!command) return;
 
-    if (!interaction.isCommand()) {
-      console.log("Interaction is not a command.");
-      return;
-    }
+      try {
+        await command.execute(interaction);
+        console.log(`Executed command: ${interaction.commandName}`);
+      } catch (error) {
+        console.error(`Error executing ${interaction.commandName}:`, error);
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply({
+            content: "There was an error executing that command!",
+            ephemeral: true,
+          });
+        } else {
+          await interaction.reply({
+            content: "There was an error executing that command!",
+            ephemeral: true,
+          });
+        }
+      }
+    } else if (interaction.isButton()) {
+      // Handle Button Interactions
+      const [action, sessionId] = interaction.customId.split("_");
 
-    const command = interaction.client.commands.get(interaction.commandName);
-    console.log(`Handling command: ${interaction.commandName}`);
-
-    if (!command) {
-      console.error(
-        `No command matching ${interaction.commandName} was found.`
-      );
-      return;
-    }
-
-    try {
-      await command.execute(interaction);
-      console.log(`Executed command: ${interaction.commandName}`);
-    } catch (error) {
-      console.error(`Error executing ${interaction.commandName}:`, error);
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({
-          content: "There was an error executing that command!",
+      if (!sessionId) {
+        await interaction.reply({
+          content: "Invalid session ID.",
           ephemeral: true,
         });
-      } else {
+        return;
+      }
+
+      try {
+        const Session = require("../models/Session"); // Ensure correct path
+        const session = await Session.findById(sessionId);
+        if (!session) {
+          await interaction.reply({
+            content: "Session not found.",
+            ephemeral: true,
+          });
+          return;
+        }
+
+        const userTag = `${interaction.user.username}#${interaction.user.discriminator}`;
+
+        if (action === "join") {
+          if (session.participants.includes(userTag)) {
+            await interaction.reply({
+              content: "You have already joined this session.",
+              ephemeral: true,
+            });
+            return;
+          }
+
+          session.participants.push(userTag);
+          await session.save();
+
+          await interaction.reply({
+            content: "✅ You have joined the session!",
+            ephemeral: true,
+          });
+          console.log(`${userTag} joined session ${sessionId}`);
+        } else if (action === "leave") {
+          if (!session.participants.includes(userTag)) {
+            await interaction.reply({
+              content: "You are not part of this session.",
+              ephemeral: true,
+            });
+            return;
+          }
+
+          session.participants = session.participants.filter(
+            (participant) => participant !== userTag
+          );
+          await session.save();
+
+          await interaction.reply({
+            content: "✅ You have left the session.",
+            ephemeral: true,
+          });
+          console.log(`${userTag} left session ${sessionId}`);
+        } else {
+          await interaction.reply({
+            content: "Unknown action.",
+            ephemeral: true,
+          });
+        }
+      } catch (error) {
+        console.error("Error handling button interaction:", error);
         await interaction.reply({
-          content: "There was an error executing that command!",
+          content: "❌ There was an error processing your request.",
           ephemeral: true,
         });
       }

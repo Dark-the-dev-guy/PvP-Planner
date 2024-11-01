@@ -17,7 +17,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent, // If you plan to handle message content
+    // Add other intents if needed
   ],
   partials: [Partials.Channel], // If you need partials
 });
