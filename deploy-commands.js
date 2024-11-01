@@ -29,6 +29,6 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
     );
     console.log("Slash commands deployed successfully.");
   } catch (error) {
-    console.error(error);
+    console.error("Error deploying slash commands:", error);
   }
 })();
