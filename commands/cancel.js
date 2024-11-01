@@ -1,7 +1,7 @@
 // commands/cancel.js
 
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const Session = require("../models/Session"); // Ensure this path is correct
+const Session = require("../models/Session");
 const logger = require("../utils/logger");
 
 module.exports = {
@@ -47,12 +47,12 @@ module.exports = {
         });
       }
 
-      // If multiple sessions are found, list them and allow the user to select which one to cancel
+      // If multiple sessions are found, list them and prompt for specific cancellation
       if (sessions.length > 1) {
         let sessionList =
           "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
         sessions.forEach((session) => {
-          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)}\n**Host:** ${session.host}\n\n`;
+          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n**Host:** ${session.host}\n\n`;
         });
 
         return interaction.editReply({ content: sessionList });
@@ -112,5 +112,5 @@ function formatTime(date) {
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12; // Convert to 12-hour format
-  return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  return `${hours} ${ampm}`;
 }

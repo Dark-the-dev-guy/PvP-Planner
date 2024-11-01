@@ -1,8 +1,14 @@
 // commands/schedule.js
 
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const Session = require("../models/Session"); // Ensure this model is correctly defined
-const logger = require("../utils/logger"); // Ensure logger.js exists and is correctly set up
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
+const Session = require("../models/Session");
+const logger = require("../utils/logger");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -98,22 +104,38 @@ module.exports = {
         .setTitle("📅 Session Scheduled")
         .setColor(0x1e90ff)
         .addFields(
-          { name: "Game Mode", value: gameMode, inline: true },
+          { name: "Game Mode", value: gameMode.toUpperCase(), inline: true },
           { name: "Date", value: dateInput, inline: true },
-          { name: "Time", value: timeInput, inline: true },
+          {
+            name: "Time",
+            value: `${formatTime(sessionDateTime)} ET`,
+            inline: true,
+          },
           { name: "Host", value: newSession.host, inline: false },
           { name: "Notes", value: notes, inline: false }
         )
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
 
-      await interaction.editReply({ embeds: [embed] });
+      // Adding Join and Leave buttons
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`join_${newSession._id}`)
+          .setLabel("Join")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`leave_${newSession._id}`)
+          .setLabel("Leave")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      await interaction.editReply({ embeds: [embed], components: [row] });
       logger.info(
-        `New session scheduled by ${interaction.user.tag}: ${gameMode} on ${dateInput} at ${timeInput}`
+        `New session scheduled by ${interaction.user.tag}: ${gameMode.toUpperCase()} on ${dateInput} at ${timeInput}`
       );
     } catch (error) {
-      console.error(error);
-      logger.error("Error scheduling session:", error);
+      console.error("Error executing schedule command:", error);
+      logger.error("Error executing schedule command:", error);
       await interaction.editReply({
         content:
           "❌ There was an error scheduling the session. Please try again later.",
@@ -122,3 +144,12 @@ module.exports = {
     }
   },
 };
+
+// Helper function to format time
+function formatTime(date) {
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12; // Convert to 12-hour format
+  return `${hours} ${ampm}`;
+}
