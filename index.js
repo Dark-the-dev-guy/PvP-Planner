@@ -1,22 +1,28 @@
 // index.js
 
-const { Client, GatewayIntentBits } = require("discord.js");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
+const { Client, GatewayIntentBits, Partials } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const { sendReminders } = require("./utils/reminders");
-const logger = require("./utils/logger"); // Assuming you have a logger
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
+const logger = require("./utils/logger");
 
 dotenv.config();
 
+// Set Mongoose strictQuery option to false
+mongoose.set("strictQuery", false);
+
+// Initialize Discord Client with necessary intents
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent, // If you plan to handle message content
+  ],
+  partials: [Partials.Channel], // If you need partials
 });
 
 // Connect to MongoDB
-mongoose.set("strictQuery", false);
-
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -34,7 +40,8 @@ const commandFiles = fs
 
 for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
-  client.commands.set(command.name, command);
+  client.commands.set(command.data.name, command);
+  logger.info(`Registered command: ${command.data.name}`);
 }
 
 // Load Events
@@ -50,13 +57,7 @@ for (const file of eventFiles) {
   } else {
     client.on(event.name, (...args) => event.execute(...args, client));
   }
+  logger.info(`Loaded event: ${event.name}`);
 }
 
-client.once("ready", () => {
-  logger.info(`Logged in as ${client.user.tag}!`);
-  sendReminders(client); // Initialize reminders
-});
-
 client.login(process.env.DISCORD_TOKEN);
-
-logger.info("Logger is working!");
