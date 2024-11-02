@@ -60,16 +60,17 @@ module.exports = {
       // If only one session is found or session ID is provided, proceed to cancel it
       const session = sessions[0];
 
-      // Check if the user is the host or has Admin permissions
-      const member = interaction.member;
-      const adminRole = interaction.guild.roles.cache.find(
-        (role) => role.name === "Admin"
-      ); // Replace 'Admin' with your actual admin role name
+      // Define your admin roles
+      const adminRoles = ["👻", "🌈🦄✨💖", "🕹️"];
 
-      if (
-        session.host !== interaction.user.id &&
-        !member.roles.cache.has(adminRole?.id)
-      ) {
+      // Check if the user has any of the admin roles
+      const memberRoles = interaction.member.roles.cache;
+      const isAdmin = memberRoles.some((role) =>
+        adminRoles.includes(role.name)
+      );
+
+      // Allow cancellation if the user is the host or has an admin role
+      if (session.host !== interaction.user.id && !isAdmin) {
         return interaction.editReply({
           content: "❌ You do not have permission to cancel this session.",
         });
@@ -83,7 +84,6 @@ module.exports = {
         )
         .setColor(0xff0000)
         .addFields(
-          { name: "Session ID", value: `${session._id}`, inline: true },
           {
             name: "Game Mode",
             value: session.gameMode.toUpperCase(),
@@ -117,7 +117,8 @@ module.exports = {
                 ? session.participants.map((id) => `<@${id}>`).join(", ")
                 : "None",
             inline: false,
-          }
+          },
+          { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
         )
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });
