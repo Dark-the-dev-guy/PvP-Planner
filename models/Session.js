@@ -2,22 +2,29 @@
 
 const mongoose = require("mongoose");
 
-const sessionSchema = new mongoose.Schema({
+const SessionSchema = new mongoose.Schema({
+  sessionId: {
+    type: String,
+    unique: true,
+    default: function () {
+      return this._id.toString();
+    },
+  },
   gameMode: {
     type: String,
-    enum: ["2v2", "3v3", "rbg"],
     required: true,
+    enum: ["2v2", "3v3", "rbg"],
   },
   date: {
     type: Date,
     required: true,
   },
   host: {
-    type: String, // Storing User ID
-    required: true,
+    type: String, // Storing Discord user ID as a string
+    required: false, // Allows for 'Unknown Host'
   },
   participants: {
-    type: [String], // Storing User IDs
+    type: [String], // Array of Discord user IDs
     default: [],
   },
   notes: {
@@ -26,4 +33,4 @@ const sessionSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Session", sessionSchema);
+module.exports = mongoose.model("Session", SessionSchema);

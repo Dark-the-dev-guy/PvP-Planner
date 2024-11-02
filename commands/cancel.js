@@ -30,7 +30,7 @@ module.exports = {
       let query = {};
 
       if (sessionId) {
-        query._id = sessionId;
+        query.sessionId = sessionId;
       } else if (hostUser) {
         query.host = hostUser.id;
       } else {
@@ -51,7 +51,7 @@ module.exports = {
         let sessionList =
           "Please specify which session you want to cancel by providing the **Session ID**:\n\n";
         sessions.forEach((session) => {
-          sessionList += `**ID:** ${session._id}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n\n`;
+          sessionList += `**ID:** ${session.sessionId}\n**Game Mode:** ${session.gameMode.toUpperCase()}\n**Date:** ${session.date.toLocaleDateString()}\n**Time:** ${formatTime(session.date)} ET\n\n`;
         });
 
         return interaction.editReply({ content: sessionList });
@@ -76,7 +76,7 @@ module.exports = {
         });
       }
 
-      await Session.deleteOne({ _id: session._id });
+      await Session.deleteOne({ sessionId: session.sessionId });
 
       const embed = new EmbedBuilder()
         .setTitle(
@@ -118,7 +118,7 @@ module.exports = {
                 : "None",
             inline: false,
           },
-          { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
+          { name: "Session ID", value: `${session.sessionId}`, inline: false } // Moved to bottom
         )
         .setTimestamp()
         .setFooter({ text: "PvP Planner" });

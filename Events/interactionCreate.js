@@ -47,7 +47,7 @@ module.exports = {
       }
 
       try {
-        const session = await Session.findById(sessionId);
+        const session = await Session.findOne({ sessionId });
 
         if (!session) {
           return interaction.reply({
@@ -141,7 +141,7 @@ module.exports = {
               inline: true,
             },
             { name: "Participant List", value: participantList, inline: false },
-            { name: "Session ID", value: `${session._id}`, inline: false } // Moved to bottom
+            { name: "Session ID", value: `${session.sessionId}`, inline: false } // Moved to bottom
           )
           .setTimestamp()
           .setFooter({ text: "PvP Planner" });
@@ -152,11 +152,11 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`letsgo_${session._id}`)
+            .setCustomId(`letsgo_${session.sessionId}`)
             .setLabel("Let's Go!")
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
-            .setCustomId(`cantmakeit_${session._id}`)
+            .setCustomId(`cantmakeit_${session.sessionId}`)
             .setLabel("Can't make it, cause I suck!")
             .setStyle(ButtonStyle.Danger)
         );

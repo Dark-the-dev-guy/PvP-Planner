@@ -81,6 +81,7 @@ module.exports = {
       });
     }
 
+    // Create a new session without manually setting sessionId
     const newSession = new Session({
       gameMode,
       date: sessionDateTime,
@@ -89,7 +90,16 @@ module.exports = {
       notes,
     });
 
-    await newSession.save();
+    try {
+      await newSession.save();
+    } catch (error) {
+      console.error("Error saving new session:", error);
+      return interaction.editReply({
+        content:
+          "❌ There was an error scheduling the session. Please try again.",
+        ephemeral: true,
+      });
+    }
 
     const embed = new EmbedBuilder()
       .setTitle(
@@ -108,7 +118,7 @@ module.exports = {
         { name: "Notes", value: notes, inline: false },
         { name: "Participants", value: "0", inline: true },
         { name: "Participant List", value: "None", inline: false },
-        { name: "Session ID", value: `${newSession._id}`, inline: false } // Moved to bottom
+        { name: "Session ID", value: `${newSession.sessionId}`, inline: false } // Moved to bottom
       )
       .setTimestamp()
       .setFooter({ text: "PvP Planner" });
@@ -119,11 +129,11 @@ module.exports = {
     // Adding "Let's Go!" and "Can't make it, cause I suck!" buttons
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId(`letsgo_${newSession._id}`)
+        .setCustomId(`letsgo_${newSession.sessionId}`)
         .setLabel("Let's Go!")
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId(`cantmakeit_${newSession._id}`)
+        .setCustomId(`cantmakeit_${newSession.sessionId}`)
         .setLabel("Can't make it, cause I suck!")
         .setStyle(ButtonStyle.Danger)
     );
