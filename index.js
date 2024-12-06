@@ -1,26 +1,38 @@
 // index.js
 
-const { Client, GatewayIntentBits, Partials } = require("discord.js");
+require("dotenv").config();
+const { Client, Intents, Collection } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const logger = require("./utils/logger");
 
-dotenv.config();
-
-// Set Mongoose strictQuery option to false
-mongoose.set("strictQuery", false);
-
-// Initialize Discord Client with necessary intents
+// Create a new Discord client instance
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent, // If you plan to handle message content
-  ],
-  partials: [Partials.Channel], // If you need partials
+  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
 });
+
+// Initialize a Collection for commands
+client.commands = new Collection();
+
+// Path to the events directory using a relative path
+const eventsPath = path.join(__dirname, "events");
+
+// Read all event files from the events directory
+const eventFiles = fs
+  .readdirSync(eventsPath)
+  .filter((file) => file.endsWith(".js"));
+
+// Register each event
+for (const file of eventFiles) {
+  const filePath = path.join(eventsPath, file);
+  const event = require(filePath);
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args, client));
+  } else {
+    client.on(event.name, (...args) => event.execute(...args, client));
+  }
+  console.log(`Registered event: ${event.name}`);
+}
 
 // Connect to MongoDB
 mongoose
@@ -28,43 +40,20 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => logger.info("Connected to MongoDB"))
-  .catch((err) => logger.error("MongoDB connection error:", err));
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-// Load Commands
-client.commands = new Map();
-const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs
-  .readdirSync(commandsPath)
-  .filter((file) => file.endsWith(".js"));
+// Log in to Discord with your client's token
+client
+  .login(process.env.DISCORD_TOKEN)
+  .then(() => {
+    console.log(`Logged in as ${client.user.tag}!`);
+  })
+  .catch((err) => {
+    console.error("Discord login error:", err);
+  });
 
-for (const file of commandFiles) {
-  const command = require(path.join(commandsPath, file));
-  client.commands.set(command.data.name, command);
-  logger.info(`Registered command: ${command.data.name}`);
-}
-
-// Load Events
-const eventsPath = path.join(__dirname, "events");
-const eventFiles = fs
-  .readdirSync(eventsPath)
-  .filter((file) => file.endsWith(".js"));
-
-for (const file of eventFiles) {
-  const event = require(path.join(eventsPath, file));
-  if (event.name && typeof event.execute === "function") {
-    // Ensure the event has a name and execute function
-    if (event.once) {
-      client.once(event.name, (...args) => event.execute(...args, client));
-    } else {
-      client.on(event.name, (...args) => event.execute(...args, client));
-    }
-    logger.info(`Loaded event: ${event.name}`);
-  } else {
-    logger.warn(
-      `Failed to load an event from file: ${file} (Missing 'name' or 'execute' property)`
-    );
-  }
-}
-
-client.login(process.env.DISCORD_TOKEN);
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (error) => {
+  console.error("Unhandled promise rejection:", error);
+});
