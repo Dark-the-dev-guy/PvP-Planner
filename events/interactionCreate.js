@@ -8,7 +8,6 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const Session = require("../models/Session");
-const logger = require("../utils/logger"); // Optional: Ensure you have a logger utility or remove this line
 
 module.exports = {
   name: Events.InteractionCreate,
