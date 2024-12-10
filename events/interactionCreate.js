@@ -8,7 +8,7 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const Session = require("../models/Session");
-const logger = require("../utils/logger"); // Assuming you have a logger utility
+const logger = require("../utils/logger"); // Optional: Ensure you have a logger utility or remove this line
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -44,7 +44,6 @@ module.exports = {
         await handleJoin(interaction, session, userId, username);
       } else if (action === "cantmakeit") {
         // Handle "Can't make it, cause I suck!" button
-        // Directly update status to "not attending"
         await handleCantMakeIt(interaction, session, userId, username);
       }
     }
