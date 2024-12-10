@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const Session = require("../models/Session");
 const { Client, GatewayIntentBits } = require("discord.js");
+const { v4: uuidv4 } = require("uuid");
 
 dotenv.config();
 
@@ -19,12 +20,23 @@ client.once("ready", async () => {
     const sessions = await Session.find();
 
     for (const session of sessions) {
+      // Assign sessionId if missing
+      if (!session.sessionId) {
+        session.sessionId = uuidv4();
+        console.log(
+          `🔄 Assigned new sessionId to session originally hosted by: ${session.host}`
+        );
+      }
+
       // Migrate host
       if (!/^\d+$/.test(session.host)) {
         // If host is not a snowflake (Discord ID)
         const user = await client.users.fetch(session.host).catch(() => null);
         if (user) {
           session.host = user.id;
+          console.log(
+            `🔄 Updated host for session ${session.sessionId} to ${user.id}`
+          );
         } else {
           console.log(`🔍 User not found for host: ${session.host}`);
         }
@@ -38,6 +50,9 @@ client.once("ready", async () => {
           }
           const user = await client.users.fetch(gamer.userId).catch(() => null);
           if (user) {
+            console.log(
+              `🔄 Updated gamer ${gamer.userId} to ${user.id} in session ${session.sessionId}`
+            );
             return {
               ...gamer.toObject(),
               userId: user.id,
@@ -53,7 +68,7 @@ client.once("ready", async () => {
       console.log(`✅ Migrated session: ${session.sessionId}`);
     }
 
-    console.log("🎉 Migration completed.");
+    console.log("🎉 Migration completed successfully.");
   } catch (error) {
     console.error("❌ Migration failed:", error);
   } finally {
