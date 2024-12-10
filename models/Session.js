@@ -6,7 +6,6 @@ const GamerSchema = new mongoose.Schema({
   userId: {
     type: String,
     required: true,
-    unique: true, // Ensures a user can only have one entry per session
   },
   username: {
     type: String,
@@ -49,7 +48,7 @@ const SessionSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
-  gamers: [GamerSchema], // Renamed from 'participants' to 'gamers'
+  gamers: [GamerSchema],
   timestamp: {
     type: Date,
     default: Date.now,
