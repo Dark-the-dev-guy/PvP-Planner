@@ -34,18 +34,26 @@ client.once("ready", async () => {
       }
 
       // Migrate participants
-      session.participants = await Promise.all(
-        session.participants.map(async (participant) => {
-          if (/^\d+$/.test(participant)) {
-            return participant; // Already a snowflake
+      session.gamers = await Promise.all(
+        session.gamers.map(async (gamer) => {
+          if (/^\d+$/.test(gamer.userId)) {
+            return gamer; // Already a snowflake
           }
-          const user = await client.users.fetch(participant).catch(() => null);
-          return user ? user.id : participant;
+          const user = await client.users.fetch(gamer.userId).catch(() => null);
+          if (user) {
+            return {
+              ...gamer.toObject(),
+              userId: user.id,
+            };
+          } else {
+            console.log(`User not found for gamer: ${gamer.userId}`);
+            return gamer; // Keep original if user not found
+          }
         })
       );
 
       await session.save();
-      console.log(`Migrated session: ${session._id}`);
+      console.log(`Migrated session: ${session.sessionId}`);
     }
 
     console.log("Migration completed.");

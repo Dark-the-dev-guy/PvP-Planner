@@ -1,4 +1,4 @@
-// commands/viewcalendar.js
+// Commands/viewcalendar.js
 
 const {
   SlashCommandBuilder,
@@ -28,14 +28,15 @@ module.exports = {
 
     for (const session of sessions) {
       const formattedTime = `${formatTime(session.date)} ET`;
-      const participantCount = session.participants.length;
-      let participantList = "None";
+      const gamerCount = session.gamers.length;
+      let gamerList = "None";
 
-      if (participantCount > 0) {
-        const userMentions = session.participants
-          .map((id) => `<@${id}>`)
+      if (gamerCount > 0) {
+        const userMentions = session.gamers
+          .filter((g) => g.status === "attending")
+          .map((g) => `<@${g.userId}>`)
           .join(", ");
-        participantList = userMentions;
+        gamerList = userMentions || "None";
       }
 
       // Fetch host's avatar
@@ -67,8 +68,15 @@ module.exports = {
             inline: true,
           },
           { name: "Host", value: hostDisplay, inline: true },
-          { name: "Participants", value: `${participantCount}`, inline: true },
-          { name: "Participant List", value: participantList, inline: false },
+          { name: "Gamers", value: `${gamerCount}`, inline: true },
+          {
+            name: "Gamer List",
+            value:
+              session.gamers.length > 0
+                ? session.gamers.map((g) => `<@${g.userId}>`).join(", ")
+                : "None",
+            inline: false,
+          },
           { name: "Session ID", value: `${session.sessionId}`, inline: false } // Moved to bottom
         )
         .setTimestamp()
@@ -80,7 +88,7 @@ module.exports = {
 
       embeds.push(embed);
 
-      // Add "Let's Go!" and "Can't make it, cause I suck!" buttons
+      // Adding "Let's Go!" and "Can't make it, cause I suck!" buttons
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`letsgo_${session.sessionId}`)
@@ -96,34 +104,4 @@ module.exports = {
     }
 
     // Discord allows up to 10 embeds per message
-    // If more than 10 sessions, split into multiple messages
-    const embedChunks = chunkArray(embeds, 10);
-    const componentChunks = chunkArray(componentsArray, 10);
-
-    for (let i = 0; i < embedChunks.length; i++) {
-      await interaction.followUp({
-        embeds: embedChunks[i],
-        components: componentChunks[i] || [],
-      });
-    }
-
-    // Delete the initial deferred reply to clean up
-    await interaction.deleteReply();
-  },
-};
-
-function formatTime(date) {
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  return `${hours}:${minutes} ${ampm}`;
-}
-
-function chunkArray(array, size) {
-  const results = [];
-  while (array.length) {
-    results.push(array.splice(0, size));
-  }
-  return results;
-}
+    // If more than 10 sessions, split into multiple mes

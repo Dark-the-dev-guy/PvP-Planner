@@ -1,4 +1,4 @@
-// commands/schedule.js
+// Commands/schedule.js
 
 const {
   SlashCommandBuilder,
@@ -81,13 +81,17 @@ module.exports = {
       });
     }
 
-    // Create a new session without manually setting sessionId
+    // Generate a unique session ID
+    const sessionId = generateSessionId();
+
+    // Create a new session with an empty gamers array
     const newSession = new Session({
+      sessionId,
       gameMode,
       date: sessionDateTime,
       host: interaction.user.id, // Storing user ID
-      participants: [],
       notes,
+      gamers: [], // Initialize as empty array
     });
 
     try {
@@ -116,36 +120,9 @@ module.exports = {
         },
         { name: "Host", value: `<@${newSession.host}>`, inline: true },
         { name: "Notes", value: notes, inline: false },
-        { name: "Participants", value: "0", inline: true },
-        { name: "Participant List", value: "None", inline: false },
+        { name: "Gamers", value: "0", inline: true },
+        { name: "Gamer List", value: "None", inline: false },
         { name: "Session ID", value: `${newSession.sessionId}`, inline: false } // Moved to bottom
       )
       .setTimestamp()
-      .setFooter({ text: "PvP Planner" });
-
-    // Set the host's avatar as the thumbnail
-    embed.setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
-
-    // Adding "Let's Go!" and "Can't make it, cause I suck!" buttons
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`letsgo_${newSession.sessionId}`)
-        .setLabel("Let's Go!")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`cantmakeit_${newSession.sessionId}`)
-        .setLabel("Can't make it, cause I suck!")
-        .setStyle(ButtonStyle.Danger)
-    );
-
-    await interaction.editReply({ embeds: [embed], components: [row] });
-  },
-};
-
-function formatTime(date) {
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  return `${hours}:${minutes} ${ampm}`;
-}
+    

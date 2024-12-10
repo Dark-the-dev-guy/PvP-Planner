@@ -1,52 +1,88 @@
 // events/interactionCreate.js
 
 const {
+  Events,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } = require("discord.js");
 const Session = require("../models/Session");
+const logger = require("../utils/logger"); // Assuming you have a logger utility
 
 module.exports = {
-  name: "interactionCreate",
+  name: Events.InteractionCreate,
   async execute(interaction) {
-    if (interaction.isCommand()) {
-      const command = interaction.client.commands.get(interaction.commandName);
+    if (interaction.isButton()) {
+      const { customId } = interaction;
+      const userId = interaction.user.id;
+      const username = interaction.user.tag;
 
-      if (!command) return;
-
-      try {
-        await command.execute(interaction);
-      } catch (error) {
-        console.error(
-          `Error executing ${interaction.commandName} command:`,
-          error
-        );
-        // Only reply if the interaction has not been deferred or replied to
-        if (!interaction.deferred && !interaction.replied) {
-          await interaction.reply({
-            content: "❌ There was an error executing that command.",
-            ephemeral: true,
-          });
-        } else {
-          // If already deferred, edit the reply
-          await interaction.editReply({
-            content: "❌ There was an error executing that command.",
-          });
-        }
-      }
-    } else if (interaction.isButton()) {
-      const [action, sessionId] = interaction.customId.split("_");
+      // Expected customId formats:
+      // 'letsgo_<sessionId>' or 'cantmakeit_<sessionId>'
+      const [action, sessionId] = customId.split("_");
 
       if (!sessionId) {
         return interaction.reply({
-          content: "❌ Invalid session ID.",
+          content: "❌ Invalid button interaction.",
           ephemeral: true,
         });
       }
 
-      try {
+      // Fetch the session by sessionId
+      const session = await Session.findOne({ sessionId });
+
+      if (!session) {
+        return interaction.reply({
+          content: "❌ Session not found.",
+          ephemeral: true,
+        });
+      }
+
+      if (action === "letsgo") {
+        // Handle "Let's Go!" button
+        await handleJoin(interaction, session, userId, username);
+      } else if (action === "cantmakeit") {
+        // Handle "Can't make it, cause I suck!" button
+        // Prompt user to specify if they're not attending or late via a modal
+        const modal = new ModalBuilder()
+          .setCustomId(`cantmakeit_modal_${sessionId}`)
+          .setTitle("Can't Make It");
+
+        const statusInput = new TextInputBuilder()
+          .setCustomId("status_input")
+          .setLabel("Please specify your status")
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder("Type 'not attending' or 'late'")
+          .setRequired(true);
+
+        const reasonInput = new TextInputBuilder()
+          .setCustomId("reason_input")
+          .setLabel("Please provide a reason (optional)")
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder("Optional")
+          .setRequired(false);
+
+        const firstActionRow = new ActionRowBuilder().addComponents(
+          statusInput
+        );
+        const secondActionRow = new ActionRowBuilder().addComponents(
+          reasonInput
+        );
+
+        modal.addComponents(firstActionRow, secondActionRow);
+
+        await interaction.showModal(modal);
+      }
+    } else if (interaction.isModalSubmit()) {
+      const { customId } = interaction;
+
+      // Handle the modal submission
+      if (customId.startsWith("cantmakeit_modal_")) {
+        const sessionId = customId.split("_")[2];
         const session = await Session.findOne({ sessionId });
 
         if (!session) {
@@ -56,129 +92,86 @@ module.exports = {
           });
         }
 
-        if (action === "letsgo") {
-          if (session.participants.includes(interaction.user.id)) {
-            return interaction.reply({
-              content: "✅ You are already participating in this session.",
-              ephemeral: true,
-            });
-          }
+        const statusInput = interaction.fields
+          .getTextInputValue("status_input")
+          .toLowerCase();
+        const reasonInput =
+          interaction.fields.getTextInputValue("reason_input");
 
-          session.participants.push(interaction.user.id);
-          await session.save();
-
-          await interaction.reply({
-            content: "✅ You have joined the session!",
-            ephemeral: true,
-          });
-        } else if (action === "cantmakeit") {
-          if (!session.participants.includes(interaction.user.id)) {
-            return interaction.reply({
-              content: "✅ You are not participating in this session.",
-              ephemeral: true,
-            });
-          }
-
-          session.participants = session.participants.filter(
-            (id) => id !== interaction.user.id
-          );
-          await session.save();
-
-          await interaction.reply({
-            content: "✅ You have left the session.",
-            ephemeral: true,
-          });
-        } else {
+        if (!["not attending", "late"].includes(statusInput)) {
           return interaction.reply({
-            content: "❌ Invalid action.",
+            content:
+              "❌ Invalid status. Please type 'not attending' or 'late'.",
             ephemeral: true,
           });
         }
 
-        // Update the original embed with the updated participant list
-        const participantCount = session.participants.length;
-        let participantList = "None";
-
-        if (participantCount > 0) {
-          const userMentions = session.participants
-            .map((id) => `<@${id}>`)
-            .join(", ");
-          participantList = userMentions;
-        }
-
-        const formattedTime = `${formatTime(session.date)} ET`;
-        const hostUser = await interaction.client.users
-          .fetch(session.host)
-          .catch(() => null);
-        const hostDisplay = hostUser ? `<@${hostUser.id}>` : "Unknown Host";
-
-        const embed = new EmbedBuilder()
-          .setTitle(
-            `${session.gameMode.toUpperCase()} on ${session.date.toLocaleDateString()} @ ${formattedTime}`
-          )
-          .setColor(0x1e90ff)
-          .setDescription(`**Notes:** ${session.notes || "No notes"}`)
-          .addFields(
-            {
-              name: "Game Mode",
-              value: session.gameMode.toUpperCase(),
-              inline: true,
-            },
-            {
-              name: "Date",
-              value: session.date.toLocaleDateString(),
-              inline: true,
-            },
-            {
-              name: "Time",
-              value: `${formatTime(session.date)} ET`,
-              inline: true,
-            },
-            { name: "Host", value: hostDisplay, inline: true },
-            {
-              name: "Participants",
-              value: `${participantCount}`,
-              inline: true,
-            },
-            { name: "Participant List", value: participantList, inline: false },
-            { name: "Session ID", value: `${session.sessionId}`, inline: false } // Moved to bottom
-          )
-          .setTimestamp()
-          .setFooter({ text: "PvP Planner" });
-
-        if (hostUser) {
-          embed.setThumbnail(hostUser.displayAvatarURL({ dynamic: true }));
-        }
-
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId(`letsgo_${session.sessionId}`)
-            .setLabel("Let's Go!")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId(`cantmakeit_${session.sessionId}`)
-            .setLabel("Can't make it, cause I suck!")
-            .setStyle(ButtonStyle.Danger)
+        // Update or add the participant's status
+        const existingGamer = session.gamers.find(
+          (gamer) => gamer.userId === interaction.user.id
         );
 
-        // Find the original message to edit
-        const message = interaction.message;
-        await message.edit({ embeds: [embed], components: [row] });
-      } catch (error) {
-        console.error("Error handling button interaction:", error);
+        if (existingGamer) {
+          existingGamer.status =
+            statusInput === "late" ? "late" : "not attending";
+          existingGamer.reason = reasonInput || "";
+        } else {
+          session.gamers.push({
+            userId: interaction.user.id,
+            username: interaction.user.tag,
+            status: statusInput === "late" ? "late" : "not attending",
+            reason: reasonInput || "",
+          });
+        }
+
+        await session.save();
+
         await interaction.reply({
-          content: "❌ There was an error processing your request.",
+          content: `✅ Your status has been updated to **${capitalize(statusInput)}**.${reasonInput ? `\n**Reason:** ${reasonInput}` : ""}`,
           ephemeral: true,
         });
+
+        // Update the session display embed
+        await updateSessionDisplay(interaction.client, sessionId);
       }
     }
   },
 };
 
-function formatTime(date) {
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  return `${hours}:${minutes} ${ampm}`;
+// Handler Functions
+
+async function handleJoin(interaction, session, userId, username) {
+  const existingGamer = session.gamers.find((gamer) => gamer.userId === userId);
+
+  if (existingGamer) {
+    if (existingGamer.status === "attending") {
+      return interaction.reply({
+        content: "✅ You are already marked as attending the session.",
+        ephemeral: true,
+      });
+    } else {
+      existingGamer.status = "attending";
+      existingGamer.reason = "";
+      await session.save();
+      await interaction.reply({
+        content: "✅ Your status has been updated to attending the session.",
+        ephemeral: true,
+      });
+    }
+  } else {
+    session.gamers.push({
+      userId,
+      username,
+      status: "attending",
+      reason: "",
+    });
+    await session.save();
+    await interaction.reply({
+      content: "✅ You have joined the session as a Gamer!",
+      ephemeral: true,
+    });
+  }
+
+  // Update the session display embed
+  await updateSessionDisplay(interaction.client, session.sessionId);
 }
