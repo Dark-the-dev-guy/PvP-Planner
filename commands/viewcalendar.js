@@ -33,8 +33,8 @@ module.exports = {
 
       if (gamerCount > 0) {
         const userMentions = session.gamers
-          .filter((g) => g.status === "attending")
-          .map((g) => `<@${g.userId}>`)
+          .filter((gamer) => gamer.status === "attending")
+          .map((gamer) => `<@${gamer.userId}>`)
           .join(", ");
         gamerList = userMentions || "None";
       }
@@ -73,7 +73,7 @@ module.exports = {
             name: "Gamer List",
             value:
               session.gamers.length > 0
-                ? session.gamers.map((g) => `<@${g.userId}>`).join(", ")
+                ? session.gamers.map((gamer) => `<@${gamer.userId}>`).join(", ")
                 : "None",
             inline: false,
           },
@@ -88,7 +88,7 @@ module.exports = {
 
       embeds.push(embed);
 
-      // Adding "Let's Go!" and "Can't make it, cause I suck!" buttons
+      // Add "Let's Go!" and "Can't make it, cause I suck!" buttons
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`letsgo_${session.sessionId}`)
@@ -104,4 +104,36 @@ module.exports = {
     }
 
     // Discord allows up to 10 embeds per message
-    // If more than 10 sessions, split into multiple mes
+    // If more than 10 sessions, split into multiple messages
+    const embedChunks = chunkArray([...embeds], 10); // Clone arrays to prevent mutation
+    const componentChunks = chunkArray([...componentsArray], 10);
+
+    for (let i = 0; i < embedChunks.length; i++) {
+      await interaction.followUp({
+        embeds: embedChunks[i],
+        components: componentChunks[i] || [],
+      });
+    }
+
+    // Delete the initial deferred reply to clean up
+    await interaction.deleteReply();
+  },
+};
+
+// Helper functions
+
+function formatTime(date) {
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
+
+function chunkArray(array, size) {
+  const results = [];
+  while (array.length) {
+    results.push(array.splice(0, size));
+  }
+  return results;
+}
