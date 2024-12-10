@@ -1,162 +1,82 @@
 // Commands/schedule.js
 
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
 const Session = require("../models/Session");
+const { v4: uuidv4 } = require("uuid");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("schedule")
-    .setDescription("Schedule a PvP gaming session.")
+    .setDescription("Schedule a new PvP session.")
     .addStringOption((option) =>
       option
-        .setName("gamemode")
-        .setDescription("Select the game mode")
+        .setName("game_mode")
+        .setDescription("The game mode for the session.")
         .setRequired(true)
-        .addChoices(
-          { name: "2v2", value: "2v2" },
-          { name: "3v3", value: "3v3" },
-          { name: "RBGs", value: "rbg" }
-        )
     )
     .addStringOption((option) =>
       option
         .setName("date")
-        .setDescription("Date of the session (MM-DD-YY)")
+        .setDescription("The date of the session in YYYY-MM-DD format.")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("time")
-        .setDescription("Time of the session (HH:MM, 24-hour)")
+        .setDescription("The time of the session in HH:MM format (24-hour).")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("notes")
-        .setDescription("Additional notes")
+        .setDescription("Any additional notes for the session.")
         .setRequired(false)
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
-
-    const gameMode = interaction.options.getString("gamemode");
+    const gameMode = interaction.options.getString("game_mode");
     const dateInput = interaction.options.getString("date");
     const timeInput = interaction.options.getString("time");
-    const notes = interaction.options.getString("notes") || "No notes";
+    const notes = interaction.options.getString("notes") || "";
+    const host = interaction.user.id;
+    const sessionId = uuidv4();
 
-    // Validate date and time formats
-    const dateRegex = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-\d{2}$/; // MM-DD-YY
-    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/; // HH:MM 24-hour
+    // Validate and parse date and time
+    const dateParts = dateInput.split("-");
+    const timeParts = timeInput.split(":");
 
-    if (!dateRegex.test(dateInput)) {
-      return interaction.editReply({
-        content: "❌ Invalid date format. Please use MM-DD-YY.",
+    if (dateParts.length !== 3 || timeParts.length !== 2) {
+      return interaction.reply({
+        content:
+          "❌ Please provide the date in `YYYY-MM-DD` format and time in `HH:MM` format.",
         ephemeral: true,
       });
     }
 
-    if (!timeRegex.test(timeInput)) {
-      return interaction.editReply({
-        content: "❌ Invalid time format. Please use HH:MM in 24-hour format.",
+    const [year, month, day] = dateParts.map(Number);
+    const [hours, minutes] = timeParts.map(Number);
+    const sessionDate = new Date(year, month - 1, day, hours, minutes);
+
+    if (isNaN(sessionDate.getTime())) {
+      return interaction.reply({
+        content: "❌ Invalid date or time provided.",
         ephemeral: true,
       });
     }
 
-    // Parse the date and time into a JavaScript Date object
-    const [month, day, year] = dateInput.split("-").map(Number);
-    const [hour, minute] = timeInput.split(":").map(Number);
-    const sessionDateTime = new Date(`20${year}`, month - 1, day, hour, minute);
-
-    if (isNaN(sessionDateTime.getTime())) {
-      return interaction.editReply({
-        content: "❌ Invalid date or time. Please check your inputs.",
-        ephemeral: true,
-      });
-    }
-
-    // Generate a unique session ID
-    const sessionId = generateSessionId();
-
-    // Create a new session with an empty gamers array
     const newSession = new Session({
       sessionId,
       gameMode,
-      date: sessionDateTime,
-      host: interaction.user.id, // Storing user ID
+      date: sessionDate,
+      host,
       notes,
-      gamers: [], // Initialize as empty array
+      gamers: [],
     });
 
-    try {
-      await newSession.save();
-    } catch (error) {
-      console.error("Error saving new session:", error);
-      return interaction.editReply({
-        content:
-          "❌ There was an error scheduling the session. Please try again.",
-        ephemeral: true,
-      });
-    }
+    await newSession.save();
 
-    const embed = new EmbedBuilder()
-      .setTitle(
-        `${gameMode.toUpperCase()} on ${dateInput} @ ${formatTime(sessionDateTime)} ET`
-      )
-      .setColor(0x1e90ff)
-      .addFields(
-        { name: "Game Mode", value: gameMode.toUpperCase(), inline: true },
-        { name: "Date", value: dateInput, inline: true },
-        {
-          name: "Time",
-          value: `${formatTime(sessionDateTime)} ET`,
-          inline: true,
-        },
-        { name: "Host", value: `<@${newSession.host}>`, inline: true },
-        { name: "Notes", value: notes, inline: false },
-        { name: "Gamers", value: "0", inline: true },
-        { name: "Gamer List", value: "None", inline: false },
-        { name: "Session ID", value: `${newSession.sessionId}`, inline: false } // Moved to bottom
-      )
-      .setTimestamp()
-      .setFooter({ text: "PvP Planner" });
-
-    // Set the host's avatar as the thumbnail
-    embed.setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
-
-    // Adding "Let's Go!" and "Can't make it, cause I suck!" buttons
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`letsgo_${newSession.sessionId}`)
-        .setLabel("Let's Go!")
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId(`cantmakeit_${newSession.sessionId}`)
-        .setLabel("Can't make it, cause I suck!")
-        .setStyle(ButtonStyle.Danger)
+    await interaction.reply(
+      `✅ New session scheduled with ID: \`${sessionId}\``
     );
-
-    await interaction.editReply({ embeds: [embed], components: [row] });
   },
 };
-
-// Helper functions
-
-function generateSessionId() {
-  // Simple session ID generator (you might want to use a more robust method)
-  return Math.random().toString(36).substr(2, 9);
-}
-
-function formatTime(date) {
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  return `${hours}:${minutes} ${ampm}`;
-}
