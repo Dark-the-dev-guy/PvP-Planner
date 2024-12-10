@@ -13,11 +13,16 @@ module.exports = {
         .setName("game_mode")
         .setDescription("The game mode for the session.")
         .setRequired(true)
+        .addChoices(
+          { name: "2v2", value: "2v2" },
+          { name: "3v3", value: "3v3" },
+          { name: "RBGs", value: "RBGs" }
+        )
     )
     .addStringOption((option) =>
       option
         .setName("date")
-        .setDescription("The date of the session in YYYY-MM-DD format.")
+        .setDescription("The date of the session in MM-DD-YY format.")
         .setRequired(true)
     )
     .addStringOption((option) =>
@@ -41,19 +46,21 @@ module.exports = {
     const host = interaction.user.id;
     const sessionId = uuidv4();
 
-    // Validate and parse date and time
+    // Validate and parse date and time (MM-DD-YY)
     const dateParts = dateInput.split("-");
     const timeParts = timeInput.split(":");
 
     if (dateParts.length !== 3 || timeParts.length !== 2) {
       return interaction.reply({
         content:
-          "❌ Please provide the date in `YYYY-MM-DD` format and time in `HH:MM` format.",
+          "❌ Please provide the date in `MM-DD-YY` format and time in `HH:MM` format.",
         ephemeral: true,
       });
     }
 
-    const [year, month, day] = dateParts.map(Number);
+    let [month, day, year] = dateParts.map(Number);
+    // Adjust year for 2-digit format
+    year += year < 50 ? 2000 : 1900;
     const [hours, minutes] = timeParts.map(Number);
     const sessionDate = new Date(year, month - 1, day, hours, minutes);
 
