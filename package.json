@@ -1,38 +1,26 @@
 {
-  "name": "pvp-planner",
+  "name": "PvP-Planner",
   "version": "1.0.0",
-  "description": "Discord-Integrated Gaming Calendar for WoW PvP Sessions",
+  "description": "A Discord bot to plan and manage PvP sessions.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "deploy": "node deploy-commands.js",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "deploy-commands": "node deploy-commands.js",
+    "migrate": "node scripts/migrateUserTagsToIDs.js"
   },
-  "keywords": [
-    "discord",
-    "bot",
-    "WoW",
-    "PvP",
-    "calendar"
-  ],
-  "author": "Your Name",
-  "license": "MIT",
   "engines": {
-    "node": "22.x"
+    "node": ">=22.x"
   },
   "dependencies": {
-    "ajv": "^8.17.1",
     "discord.js": "^14.11.0",
-    "dotenv": "^16.0.3",
-    "mongoose": "^8.8.4",
-    "node-cron": "^3.0.2",
-    "winston": "^3.15.0"
+    "dotenv": "^16.3.1",
+    "mongoose": "^7.5.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^8.10.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^3.4.2"
-  }
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0"
+  },
+  "author": "Your Name",
+  "license": "MIT"
 }
