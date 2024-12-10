@@ -19,7 +19,7 @@
   "author": "Your Name",
   "license": "MIT",
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   },
   "dependencies": {
     "ajv": "^8.17.1",
