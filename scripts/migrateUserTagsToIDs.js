@@ -13,10 +13,7 @@ client.once("ready", async () => {
   console.log("Logged in as", client.user.tag);
 
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log("Connected to MongoDB");
 
     const sessions = await Session.find();
@@ -33,7 +30,7 @@ client.once("ready", async () => {
         }
       }
 
-      // Migrate participants
+      // Migrate gamers
       session.gamers = await Promise.all(
         session.gamers.map(async (gamer) => {
           if (/^\d+$/.test(gamer.userId)) {
