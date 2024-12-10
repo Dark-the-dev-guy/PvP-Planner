@@ -125,4 +125,38 @@ module.exports = {
         { name: "Session ID", value: `${newSession.sessionId}`, inline: false } // Moved to bottom
       )
       .setTimestamp()
-    
+      .setFooter({ text: "PvP Planner" });
+
+    // Set the host's avatar as the thumbnail
+    embed.setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
+
+    // Adding "Let's Go!" and "Can't make it, cause I suck!" buttons
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`letsgo_${newSession.sessionId}`)
+        .setLabel("Let's Go!")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`cantmakeit_${newSession.sessionId}`)
+        .setLabel("Can't make it, cause I suck!")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await interaction.editReply({ embeds: [embed], components: [row] });
+  },
+};
+
+// Helper functions
+
+function generateSessionId() {
+  // Simple session ID generator (you might want to use a more robust method)
+  return Math.random().toString(36).substr(2, 9);
+}
+
+function formatTime(date) {
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12;
+  return `${hours}:${minutes} ${ampm}`;
+}
