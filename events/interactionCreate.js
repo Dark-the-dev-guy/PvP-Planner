@@ -6,9 +6,6 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
 } = require("discord.js");
 const Session = require("../models/Session");
 const logger = require("../utils/logger"); // Assuming you have a logger utility
@@ -47,92 +44,8 @@ module.exports = {
         await handleJoin(interaction, session, userId, username);
       } else if (action === "cantmakeit") {
         // Handle "Can't make it, cause I suck!" button
-        // Prompt user to specify if they're not attending or late via a modal
-        const modal = new ModalBuilder()
-          .setCustomId(`cantmakeit_modal_${sessionId}`)
-          .setTitle("Can't Make It");
-
-        const statusInput = new TextInputBuilder()
-          .setCustomId("status_input")
-          .setLabel("Please specify your status")
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder("Type 'not attending' or 'late'")
-          .setRequired(true);
-
-        const reasonInput = new TextInputBuilder()
-          .setCustomId("reason_input")
-          .setLabel("Please provide a reason (optional)")
-          .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder("Optional")
-          .setRequired(false);
-
-        const firstActionRow = new ActionRowBuilder().addComponents(
-          statusInput
-        );
-        const secondActionRow = new ActionRowBuilder().addComponents(
-          reasonInput
-        );
-
-        modal.addComponents(firstActionRow, secondActionRow);
-
-        await interaction.showModal(modal);
-      }
-    } else if (interaction.isModalSubmit()) {
-      const { customId } = interaction;
-
-      // Handle the modal submission
-      if (customId.startsWith("cantmakeit_modal_")) {
-        const sessionId = customId.split("_")[2];
-        const session = await Session.findOne({ sessionId });
-
-        if (!session) {
-          return interaction.reply({
-            content: "❌ Session not found.",
-            ephemeral: true,
-          });
-        }
-
-        const statusInput = interaction.fields
-          .getTextInputValue("status_input")
-          .toLowerCase();
-        const reasonInput =
-          interaction.fields.getTextInputValue("reason_input");
-
-        if (!["not attending", "late"].includes(statusInput)) {
-          return interaction.reply({
-            content:
-              "❌ Invalid status. Please type 'not attending' or 'late'.",
-            ephemeral: true,
-          });
-        }
-
-        // Update or add the participant's status
-        const existingGamer = session.gamers.find(
-          (gamer) => gamer.userId === interaction.user.id
-        );
-
-        if (existingGamer) {
-          existingGamer.status =
-            statusInput === "late" ? "late" : "not attending";
-          existingGamer.reason = reasonInput || "";
-        } else {
-          session.gamers.push({
-            userId: interaction.user.id,
-            username: interaction.user.tag,
-            status: statusInput === "late" ? "late" : "not attending",
-            reason: reasonInput || "",
-          });
-        }
-
-        await session.save();
-
-        await interaction.reply({
-          content: `✅ Your status has been updated to **${capitalize(statusInput)}**.${reasonInput ? `\n**Reason:** ${reasonInput}` : ""}`,
-          ephemeral: true,
-        });
-
-        // Update the session display embed
-        await updateSessionDisplay(interaction.client, sessionId);
+        // Directly update status to "not attending"
+        await handleCantMakeIt(interaction, session, userId, username);
       }
     }
   },
@@ -174,4 +87,126 @@ async function handleJoin(interaction, session, userId, username) {
 
   // Update the session display embed
   await updateSessionDisplay(interaction.client, session.sessionId);
+}
+
+async function handleCantMakeIt(interaction, session, userId, username) {
+  const existingGamer = session.gamers.find((gamer) => gamer.userId === userId);
+
+  if (existingGamer) {
+    if (existingGamer.status === "not attending") {
+      return interaction.reply({
+        content: "✅ You are already marked as not attending the session.",
+        ephemeral: true,
+      });
+    } else {
+      existingGamer.status = "not attending";
+      existingGamer.reason = ""; // Clear any previous reasons
+      await session.save();
+      await interaction.reply({
+        content:
+          "✅ Your status has been updated to not attending the session.",
+        ephemeral: true,
+      });
+    }
+  } else {
+    session.gamers.push({
+      userId,
+      username,
+      status: "not attending",
+      reason: "",
+    });
+    await session.save();
+    await interaction.reply({
+      content: "✅ You have marked yourself as not attending the session.",
+      ephemeral: true,
+    });
+  }
+
+  // Update the session display embed
+  await updateSessionDisplay(interaction.client, session.sessionId);
+}
+
+async function updateSessionDisplay(client, sessionId) {
+  // Fetch the session
+  const session = await Session.findOne({ sessionId });
+
+  if (!session) {
+    console.error(
+      `Session with ID ${sessionId} not found during display update.`
+    );
+    return;
+  }
+
+  // Define the display channel
+  const displayChannelId = process.env.DISPLAY_CHANNEL_ID; // Use environment variable
+  const displayChannel = await client.channels
+    .fetch(displayChannelId)
+    .catch((err) => {
+      console.error("Error fetching display channel:", err);
+      return null;
+    });
+
+  if (!displayChannel) {
+    console.error("Display channel not found.");
+    return;
+  }
+
+  // Fetch the latest message with the specific embed title
+  const messages = await displayChannel.messages.fetch({ limit: 100 });
+  let displayMessage = messages.find(
+    (msg) =>
+      msg.author.id === client.user.id &&
+      msg.embeds.length > 0 &&
+      msg.embeds[0].title === "🎮 PvP Session Details"
+  );
+
+  if (!displayMessage) {
+    // If no display message exists, send a new one
+    displayMessage = await displayChannel.send({
+      embeds: [constructEmbed(session)],
+    });
+  } else {
+    // Edit the existing display message
+    await displayMessage.edit({ embeds: [constructEmbed(session)] });
+  }
+}
+
+function constructEmbed(session) {
+  const attending = session.gamers.filter(
+    (gamer) => gamer.status === "attending"
+  );
+  const notAttending = session.gamers.filter(
+    (gamer) => gamer.status === "not attending"
+  );
+  const late = session.gamers.filter((gamer) => gamer.status === "late");
+
+  const embed = new EmbedBuilder()
+    .setColor(0x0099ff)
+    .setTitle("🎮 PvP Session Details")
+    .addFields(
+      {
+        name: `Gamers (${attending.length})`,
+        value:
+          attending.length > 0
+            ? attending.map((g) => `• <@${g.userId}>`).join("\n")
+            : "No gamers have joined yet.",
+      },
+      {
+        name: `Who Sucks? (${notAttending.length})`,
+        value:
+          notAttending.length > 0
+            ? notAttending.map((g) => `• <@${g.userId}>`).join("\n")
+            : "No one has opted out yet.",
+      },
+      {
+        name: `Going to be Late (${late.length})`,
+        value:
+          late.length > 0
+            ? late.map((g) => `• <@${g.userId}>`).join("\n")
+            : "No one is marked as late.",
+      }
+    )
+    .setTimestamp();
+
+  return embed;
 }
