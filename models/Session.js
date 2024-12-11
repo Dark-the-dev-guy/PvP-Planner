@@ -35,6 +35,7 @@ const SessionSchema = new mongoose.Schema({
   gameMode: {
     type: String,
     required: true,
+    enum: ["2v2", "3v3", "RBGs"], // Enforce allowed game modes
   },
   date: {
     type: Date,
