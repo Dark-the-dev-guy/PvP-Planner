@@ -4,6 +4,9 @@
   "description": "A Discord bot to plan and manage PvP sessions.",
   "main": "index.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "start": "node index.js",
     "deploy-commands": "node deploy-commands.js",
     "migrate": "node scripts/migrateUserTagsToIDs.js"
