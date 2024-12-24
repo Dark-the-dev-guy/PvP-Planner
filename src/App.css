@@ -52,8 +52,8 @@ h1 {
 }
 
 .fc-day-today {
-  background-color: #38394e; /* Subtle contrast for today /
-    border: 1px solid #ff7f50; / Orange border */
+  background-color: #38394e; /* Subtle contrast for today */
+  border: 1px solid #ff7f50; /* Orange border */
 }
 
 .fc-button {
