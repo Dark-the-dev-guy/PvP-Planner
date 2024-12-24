@@ -1,18 +1,18 @@
 {
   "name": "PvP-Planner",
   "version": "1.0.0",
-  "description": "A Discord bot to plan and manage PvP sessions.",
-  "main": "index.js",
+  "description": "PvP Planner with Discord bot and frontend interface.",
+  "main": "backend/index.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "node index.js",
-    "deploy-commands": "node deploy-commands.js",
-    "migrate": "node scripts/migrateUserTagsToIDs.js"
+    "postinstall": "npm install --prefix backend && npm install --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "node backend/index.js",
+    "deploy-commands": "node backend/deploy-commands.js",
+    "migrate": "node backend/scripts/migrateUserTagsToIDs.js",
+    "dev": "concurrently \"npm run dev --prefix frontend\" \"npm run start --prefix backend\""
   },
   "engines": {
-    "node": ">=20.x <=22.x"
+    "node": ">=20.x"
   },
   "dependencies": {
     "@fullcalendar/daygrid": "^5.11.0",
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^7.5.0",
     "eslint": "^8.50.0",
     "postcss": "^8.4.49",
     "prettier": "^3.0.0"
