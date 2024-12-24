@@ -9,7 +9,7 @@
     "migrate": "node scripts/migrateUserTagsToIDs.js"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.x <=22.x"
   },
   "dependencies": {
     "discord.js": "^14.11.0",
