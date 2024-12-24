@@ -4,11 +4,11 @@
   "description": "PvP Planner with Discord bot and frontend interface.",
   "main": "backend/index.js",
   "scripts": {
-    "build": "npm install --prefix frontend && npm run build --prefix frontend",
+    "build": "vite build",
     "start": "node backend/index.js",
     "deploy-commands": "node backend/deploy-commands.js",
     "migrate": "node backend/scripts/migrateUserTagsToIDs.js",
-    "dev": "concurrently \"npm run dev --prefix frontend\" \"npm run start --prefix backend\""
+    "dev": "concurrently \"vite\" \"node backend/index.js\""
   },
   "engines": {
     "node": "20.x"
