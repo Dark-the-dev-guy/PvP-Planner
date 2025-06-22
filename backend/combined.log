@@ -1,0 +1,8 @@
+{"level":"info","message":"Migration script starting - adding guildId: 483021881130352651 to all sessions","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:54"}
+{"level":"info","message":"Connected to MongoDB for session migration","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:55"}
+{"level":"info","message":"Found 21 sessions without guildId to migrate","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:56"}
+{"level":"info","message":"Migration progress: 10/21 sessions updated","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:56"}
+{"level":"info","message":"Migration progress: 20/21 sessions updated","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:56"}
+{"level":"info","message":"Migration progress: 21/21 sessions updated","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:57"}
+{"level":"info","message":"Migration completed successfully - 21 sessions updated with guildId: 483021881130352651","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:57"}
+{"level":"info","message":"Migration script completed - disconnected from services","service":"PvP-Planner-Bot","timestamp":"2025-04-14 17:16:57"}
